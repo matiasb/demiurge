@@ -6,6 +6,14 @@ from mock import patch
 
 import demiurge
 
+HTML_INDEX = """
+<html>
+    <body>
+        <a class="link" href="/matilinks">Link text.</a>
+    </body>
+</html>
+"""
+
 
 HTML_SAMPLE = """
 <html>
@@ -30,6 +38,14 @@ class TestItem(demiurge.Item):
         base_url = 'http://localhost'
         selector = "p.p_with_link"
         extra_attribute = 'value'
+
+
+class TestIndexItem(demiurge.Item):
+    matilinks = demiurge.SubItemField(TestItem, attr='href')
+
+    class Meta:
+        base_url = 'http://localhost'
+        selector = "a"
 
 
 class TestDemiurge(unittest.TestCase):
@@ -101,6 +117,16 @@ class TestDemiurge(unittest.TestCase):
         )
         self.assertIsNotNone(item)
         self.assertEqual(item.html, expected)
+
+
+    def test_subitem(self):
+        self.mock_opener.side_effect = [HTML_INDEX, HTML_SAMPLE, HTML_SAMPLE]
+        index = TestIndexItem.one()
+        self.assertEqual(len(index.matilinks), 2)
+        self.assertEqual(index.matilinks[0].label, 'Link text.')
+        self.assertEqual(index.matilinks[0].url, 'http://github.com/matiasb')
+        self.assertEqual(index.matilinks[1].label, 'Another link.')
+        self.assertEqual(index.matilinks[1].url, 'http://github.com/matiasb/demiurge')
 
 
 if __name__ == '__main__':
