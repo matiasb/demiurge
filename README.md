@@ -1,7 +1,7 @@
 demiurge
 ========
 
-PyQuery-based scraping micro-framework.  
+PyQuery-based scraping micro-framework.
 Supports Python 2.x and 3.x.
 
 [![Build Status](https://travis-ci.org/matiasb/demiurge.png?branch=master)](https://travis-ci.org/matiasb/demiurge)
@@ -27,7 +27,7 @@ You can define items to be scraped using a declarative (Django-inspired) syntax:
     ...     class Meta:
     ...         selector = 'table.maintable:gt(0) tr:gt(0)'
     ...         base_url = 'http://www.mininova.org'
-    ... 
+    ...
 
 At the moment, there is only two possible fields, *TextField* and
 *AttributeValueField*. A *TextField* expects an optional *selector* argument,
@@ -46,6 +46,12 @@ sponsored results).
 
 Each field selector is relative to the *Item* element (in this case, a table row).
 Then, *name* refers to the second anchor in the second cell.
+
+If you need an extra cleanup for a field (for instance, to apply a regex), you can define a *clean_<fieldname>* method in your Item subclass. This method will receive the retrieved value for the field and should return the cleaned one. For example:
+
+    ...     def clean_size(self, value):
+    ...         return value.replace('Mb', 'MB')
+
 
 Once you defined your items, there are a couple of useful methods you can use,
 both expecting as argument a relative path to the *Item* *base\_url* if it was
@@ -66,7 +72,7 @@ defined in the *Item.Meta* class, or a full URL (if *base\_url* was not specifie
     116
     >>> for t in results[:3]:
     ...     print t.name, t.size
-    ... 
+    ...
     Ubuntu 7.10 Desktop Live CD 695.81 MB
     Super Ubuntu 2008.09 - VMware image 871.95 MB
     Portable Ubuntu 9.10 for Windows 559.78 MB

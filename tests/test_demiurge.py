@@ -32,6 +32,16 @@ class TestItem(demiurge.Item):
         extra_attribute = 'value'
 
 
+class TestItemWithClean(demiurge.Item):
+    label = demiurge.TextField(selector='.link')
+
+    def clean_label(self, value):
+        return value.upper()
+
+    class Meta:
+        base_url = 'http://localhost'
+        selector = 'p'
+
 class TestDemiurge(unittest.TestCase):
 
     def setUp(self):
@@ -102,6 +112,9 @@ class TestDemiurge(unittest.TestCase):
         self.assertIsNotNone(item)
         self.assertEqual(item.html, expected)
 
+    def test_item_clean(self):
+        item = TestItemWithClean.one()
+        self.assertEqual(item.label, 'LINK TEXT.')
 
 if __name__ == '__main__':
     unittest.main()

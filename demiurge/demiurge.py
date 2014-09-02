@@ -136,6 +136,8 @@ class Item(with_metaclass(ItemMeta)):
         for field_name, field in self._fields.items():
             raw_value = field.get_value(self._pq)
             value = field.clean(raw_value)
+            if hasattr(self, 'clean_%s' % field_name):
+                value = getattr(self, 'clean_%s' % field_name)(value)
             setattr(self, field_name, value)
 
     @property
