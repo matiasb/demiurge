@@ -86,6 +86,19 @@ class AttributeValueField(TextField):
         return value
 
 
+class SubItemField(AttributeValueField):
+
+    def __init__(self, item_model, mode='all', selector=None, attr=None, **kwargs):
+        self.item_model = item_model
+        self.mode = mode
+        self.kwargs = kwargs
+        super(SubItemField, self).__init__(selector, attr)
+
+    def clean(self, value):
+        value = super(SubItemField, self).clean(value)
+        return getattr(self.item_model, self.mode)(value, **self.kwargs)
+
+
 def get_fields(bases, attrs):
     fields = [(field_name, attrs.pop(field_name)) for field_name, obj in
               list(attrs.items()) if isinstance(obj, BaseField)]
