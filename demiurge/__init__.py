@@ -2,6 +2,12 @@
 
 __author__ = 'Matias Bordese'
 __email__ = 'mbordese@gmail.com'
-__version__ = '0.1'
+__version__ = '0.2'
 
-from .demiurge import Item, AttributeValueField, TextField, ItemDoesNotExist
+from .demiurge import (
+    AttributeValueField,
+    Item,
+    ItemDoesNotExist,
+    RelatedItem,
+    TextField,
+)
