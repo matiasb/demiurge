@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sys
-
-
 try:
     from setuptools import setup
 except ImportError:
@@ -11,7 +7,7 @@ except ImportError:
 
 setup(
     name='demiurge',
-    version='0.1',
+    version='0.2',
     description='Scraping micro-framework based on pyquery.',
     author='Matias Bordese',
     author_email='mbordese@gmail.com',

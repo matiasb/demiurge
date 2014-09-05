@@ -8,9 +8,14 @@ import pyquery
 PY3 = sys.version_info[0] == 3
 
 if PY3:
-    from urllib.parse import urljoin
+    from urllib.parse import urljoin, urlparse
 else:
-    from urlparse import urljoin
+    from urlparse import urljoin, urlparse
+
+
+def is_absolute(url):
+    """Return True if given url is an absolute URL."""
+    return bool(urlparse(url).netloc)
 
 
 def with_metaclass(meta, base=object):
@@ -40,10 +45,9 @@ class TextField(BaseField):
 
     """
 
-    def __init__(self, selector=None, attr=None):
+    def __init__(self, selector=None):
         super(TextField, self).__init__()
         self.selector = selector
-        self.attr = attr
 
     def clean(self, value):
         value = super(TextField, self).clean(value)
@@ -71,6 +75,10 @@ class AttributeValueField(TextField):
 
     """
 
+    def __init__(self, selector=None, attr=None):
+        super(AttributeValueField, self).__init__(selector=selector)
+        self.attr = attr
+
     def get_value(self, pq):
         value = None
 
@@ -84,6 +92,54 @@ class AttributeValueField(TextField):
             value = html_elem.get(self.attr)
 
         return value
+
+
+class RelatedItem(object):
+    """Set a related demiurge item.
+
+    Defined as a field, a related item could be part of the item it is defined
+    on, scraped from the item's inner HTML, or following an URL given by the
+    specified attribute, if given.
+
+    Related item(s) will be fetch on first field access.
+
+    """
+
+    def __init__(self, item, selector=None, attr=None):
+        super(RelatedItem, self).__init__()
+        self.item = item
+        self.selector = selector
+        self.attr = attr
+
+    def _build_url(self, instance, path):
+        url = path
+        if path and not is_absolute(path):
+            url = urljoin(instance._meta.base_url, path)
+        return url
+
+    def __get__(self, instance, owner):
+        value = instance.__dict__.get(self.label, None)
+        if value is None:
+            # default: use given item object as base
+            source = instance._pq
+
+            if self.selector:
+                # if selector provided, traversing from the item
+                source = source(self.selector).eq(0)
+
+            if self.attr:
+                # if attr is provided,
+                # assume we are searching for an url to follow
+                html_elem = source[0]
+                path = html_elem.get(self.attr)
+                source = self._build_url(instance, path)
+
+            value = self.item.all_from(source)
+            instance.__dict__[self.label] = value
+        return value
+
+    def __set__(self, obj, value):
+        raise AttributeError('RelatedItem cannot be set.')
 
 
 def get_fields(bases, attrs):
@@ -115,6 +171,11 @@ class ItemMeta(type):
     """Metaclass for a demiurge item."""
 
     def __new__(cls, name, bases, attrs):
+        # set up related item descriptors
+        for field_name, obj in list(attrs.items()):
+            if isinstance(obj, RelatedItem):
+                obj.label = field_name
+        # set up fields
         attrs['_fields'] = get_fields(bases, attrs)
         new_class = super(ItemMeta, cls).__new__(cls, name, bases, attrs)
         new_class._meta = ItemOptions(getattr(new_class, 'Meta', None))

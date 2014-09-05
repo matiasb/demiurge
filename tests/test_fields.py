@@ -13,7 +13,8 @@ HTML_SAMPLE = """
         <p id="p_id">
             Some text.
             <a class="link" href="http://github.com/matiasb">Link text.</a>
-            <a class="link" href="http://github.com/matiasb/demiurge">Another link.</a>
+            <a class="link" href="http://github.com/matiasb/demiurge">
+                Another link.</a>
         </p>
     </body>
 </html>
