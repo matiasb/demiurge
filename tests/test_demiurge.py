@@ -158,8 +158,8 @@ class TestDemiurge(unittest.TestCase):
 
     def test_no_selector_uses_whole_html(self):
         self.mock_opener.return_value = "<html><body><p>body</p></body></html>"
-        items = TestItemNoSelector.one()
-        self.assertEqual(items.html, '<body><p>body</p></body>')
+        item = TestItemNoSelector.one()
+        self.assertEqual(item.html, '<body><p>body</p></body>')
 
     def test_item_clean(self):
         item = TestItemWithClean.one()
