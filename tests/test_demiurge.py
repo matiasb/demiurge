@@ -54,6 +54,11 @@ class TestItem(demiurge.Item):
         extra_attribute = 'value'
 
 
+class TestItemNoSelector(demiurge.Item):
+    class Meta:
+        base_url = 'http://localhost'
+
+
 class TestItemWithClean(demiurge.Item):
     label = demiurge.TextField(selector='.link')
 
@@ -150,6 +155,11 @@ class TestDemiurge(unittest.TestCase):
         )
         self.assertIsNotNone(item)
         self.assertEqual(item.html, expected)
+
+    def test_no_selector_uses_whole_html(self):
+        self.mock_opener.return_value = "<html><body><p>body</p></body></html>"
+        item = TestItemNoSelector.one()
+        self.assertEqual(item.html, '<body><p>body</p></body>')
 
     def test_item_clean(self):
         item = TestItemWithClean.one()

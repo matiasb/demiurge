@@ -209,7 +209,7 @@ class Item(with_metaclass(ItemMeta)):
     @classmethod
     def _get_items(cls, *args, **kwargs):
         pq = pyquery.PyQuery(*args, **kwargs)
-        items = pq.find(cls._meta.selector)
+        items = pq(cls._meta.selector)
         return items
 
     @classmethod
