@@ -10,7 +10,8 @@ import demiurge
 HTML_INDEX_RELATIVE = """
 <html>
     <body>
-        <a class="link" href="links">Link text.</a>
+        <p><a class="link" href="links">Link text.</a></p>
+        <a class="next" href="/?page=2">next</a>
     </body>
 </html>
 """
@@ -71,11 +72,11 @@ class TestItemWithClean(demiurge.Item):
 
 
 class TestIndexItem(demiurge.Item):
-    items_following_link = demiurge.RelatedItem(TestItem, attr='href')
+    items_following_link = demiurge.RelatedItem(TestItem, selector="a.link", attr='href')
+    next_page = demiurge.RelatedItem('self', selector="a.next", attr='href')
 
     class Meta:
         base_url = 'http://localhost'
-        selector = "a"
 
 
 class TestInnerItem(demiurge.Item):
@@ -202,6 +203,13 @@ class TestDemiurge(unittest.TestCase):
         self.assertEqual(links[0].url, 'http://github.com/matiasb')
         self.assertEqual(links[1].label, 'Another link.')
         self.assertEqual(links[1].url, 'http://github.com/matiasb/demiurge')
+
+    def test_relateditem_self_reference(self):
+        self.mock_opener.side_effect = [HTML_INDEX_RELATIVE, HTML_INDEX_RELATIVE.replace('page=2', 'page=3')]
+        index = TestIndexItem.one()
+        next_page = index.next_page[0]
+        self.assertIsInstance(next_page, TestIndexItem)
+        self.assertIn('page=3', next_page.html)
 
     def test_relateditem_subitem(self):
         self.mock_opener.side_effect = [HTML_SAMPLE]

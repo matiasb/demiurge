@@ -1,7 +1,7 @@
 #-*- coding:utf-8 -*-
 
 import sys
-
+import inspect
 import pyquery
 
 
@@ -9,6 +9,7 @@ PY3 = sys.version_info[0] == 3
 
 if PY3:
     from urllib.parse import urljoin, urlparse
+    basestring = str
 else:
     from urlparse import urljoin, urlparse
 
@@ -94,54 +95,6 @@ class AttributeValueField(TextField):
         return value
 
 
-class RelatedItem(object):
-    """Set a related demiurge item.
-
-    Defined as a field, a related item could be part of the item it is defined
-    on, scraped from the item's inner HTML, or following an URL given by the
-    specified attribute, if given.
-
-    Related item(s) will be fetch on first field access.
-
-    """
-
-    def __init__(self, item, selector=None, attr=None):
-        super(RelatedItem, self).__init__()
-        self.item = item
-        self.selector = selector
-        self.attr = attr
-
-    def _build_url(self, instance, path):
-        url = path
-        if path and not is_absolute(path):
-            url = urljoin(instance._meta.base_url, path)
-        return url
-
-    def __get__(self, instance, owner):
-        value = instance.__dict__.get(self.label, None)
-        if value is None:
-            # default: use given item object as base
-            source = instance._pq
-
-            if self.selector:
-                # if selector provided, traversing from the item
-                source = source(self.selector).eq(0)
-
-            if self.attr:
-                # if attr is provided,
-                # assume we are searching for an url to follow
-                html_elem = source[0]
-                path = html_elem.get(self.attr)
-                source = self._build_url(instance, path)
-
-            value = self.item.all_from(source)
-            instance.__dict__[self.label] = value
-        return value
-
-    def __set__(self, obj, value):
-        raise AttributeError('RelatedItem cannot be set.')
-
-
 def get_fields(bases, attrs):
     fields = [(field_name, attrs.pop(field_name)) for field_name, obj in
               list(attrs.items()) if isinstance(obj, BaseField)]
@@ -173,7 +126,9 @@ class ItemMeta(type):
     def __new__(cls, name, bases, attrs):
         # set up related item descriptors
         for field_name, obj in list(attrs.items()):
-            if isinstance(obj, RelatedItem):
+            # RelatedItem class isn't yet defined.
+            # TO DO: find a more robust solution
+            if type(obj).__name__ == 'RelatedItem':
                 obj.label = field_name
         # set up fields
         attrs['_fields'] = get_fields(bases, attrs)
@@ -234,3 +189,62 @@ class Item(with_metaclass(ItemMeta)):
         url = urljoin(cls._meta.base_url, path)
         pq_items = cls._get_items(url=url, **cls._meta._pyquery_kwargs)
         return [cls(item=i) for i in pq_items.items()]
+
+
+class RelatedItem(object):
+    """Set a related demiurge item.
+
+    Defined as a field, a related item could be part of the item it is defined
+    on, scraped from the item's inner HTML, or following an URL given by the
+    specified attribute, if given.
+
+    Related item(s) will be fetch on first field access.
+
+    """
+
+    def __init__(self, item, selector=None, attr=None):
+        super(RelatedItem, self).__init__()
+        if item == 'self':
+            # get class name where the RelatedItem instance is defined
+            item = inspect.stack()[1][3]
+        self.item = item
+        self.selector = selector
+        self.attr = attr
+
+    def _build_url(self, instance, path):
+        url = path
+        if path and not is_absolute(path):
+            url = urljoin(instance._meta.base_url, path)
+        return url
+
+    def __get__(self, instance, owner):
+        value = instance.__dict__.get(self.label, None)
+        if value is None:
+            if isinstance(self.item, basestring):
+                self.item = RelatedItem._get_item_class_by_name(self.item)
+
+            # default: use given item object as base
+            source = instance._pq
+
+            if self.selector:
+                # if selector provided, traversing from the item
+                source = source(self.selector).eq(0)
+
+            if self.attr:
+                # if attr is provided,
+                # assume we are searching for an url to follow
+                source = self._build_url(instance, source.attr(self.attr))
+
+            value = self.item.all_from(source)
+            instance.__dict__[self.label] = value
+        return value
+
+    def __set__(self, obj, value):
+        raise AttributeError('RelatedItem cannot be set.')
+
+    @staticmethod
+    def _get_item_class_by_name(name):
+        for cls in Item.__subclasses__():
+            if cls.__name__ == name:
+                return cls
+        raise ValueError("Item class '%s' couldn't be resolved" % name)
