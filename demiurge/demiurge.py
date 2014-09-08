@@ -126,7 +126,9 @@ class ItemMeta(type):
     def __new__(cls, name, bases, attrs):
         # set up related item descriptors
         for field_name, obj in list(attrs.items()):
-            if obj.__class__.__name__ == 'RelatedItem':
+            # RelatedItem class isn't yet defined.
+            # TO DO: find a more robust solution
+            if type(obj).__name__ == 'RelatedItem':
                 obj.label = field_name
         # set up fields
         attrs['_fields'] = get_fields(bases, attrs)
