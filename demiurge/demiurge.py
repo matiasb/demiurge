@@ -1,4 +1,4 @@
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 import sys
 
@@ -134,7 +134,12 @@ class RelatedItem(object):
                 path = html_elem.get(self.attr)
                 source = self._build_url(instance, path)
 
-            value = self.item.all_from(source)
+            related_item = self.item
+            if related_item == 'self':
+                # if 'self', use parent item class
+                related_item = instance.__class__
+
+            value = related_item.all_from(source)
             instance.__dict__[self.label] = value
         return value
 
