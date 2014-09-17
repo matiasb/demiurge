@@ -10,7 +10,9 @@ import demiurge
 HTML_INDEX_RELATIVE = """
 <html>
     <body>
-        <a class="link" href="links">Link text.</a>
+        <h1>Second page</h1>
+        <div><a class="link" href="links">Link text.</a></div>
+        <div><a class="next" href="?page=3">next</a></div>
     </body>
 </html>
 """
@@ -18,7 +20,11 @@ HTML_INDEX_RELATIVE = """
 HTML_INDEX_ABSOLUTE = """
 <html>
     <body>
-        <a class="link" href="http://another-server/links">Link text.</a>
+        <h1>First page</h1>
+        <div>
+            <a class="link" href="http://another-server/links">Link text.</a>
+        </div>
+        <div><a class="next" href="?page=2">next</a></div>
     </body>
 </html>
 """
@@ -71,11 +77,13 @@ class TestItemWithClean(demiurge.Item):
 
 
 class TestIndexItem(demiurge.Item):
-    items_following_link = demiurge.RelatedItem(TestItem, attr='href')
+    title = demiurge.TextField(selector='h1')
+    items_following_link = demiurge.RelatedItem(
+        TestItem, selector='a.link', attr='href')
+    next_page = demiurge.RelatedItem('self', selector='a.next', attr='href')
 
     class Meta:
         base_url = 'http://localhost'
-        selector = "a"
 
 
 class TestInnerItem(demiurge.Item):
@@ -220,6 +228,16 @@ class TestDemiurge(unittest.TestCase):
         self.assertEqual(links[0].url, 'http://github.com/matiasb')
         self.assertEqual(links[1].label, 'Another link.')
         self.assertEqual(links[1].url, 'http://github.com/matiasb/demiurge')
+
+    def test_relateditem_with_self_reference(self):
+        self.mock_opener.side_effect = [HTML_INDEX_ABSOLUTE,
+                                        HTML_INDEX_RELATIVE]
+        first_page = TestIndexItem.one()
+        assert first_page.title == 'First page'
+        next_page = first_page.next_page[0]
+        self.assertIsInstance(next_page, TestIndexItem)
+        self.assertEqual(next_page.title, 'Second page')
+        self.assertIn('?page=3', next_page.html)
 
     def test_setting_relateditem_raises(self):
         self.mock_opener.side_effect = [HTML_SAMPLE]
