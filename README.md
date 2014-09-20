@@ -6,6 +6,8 @@ Supports Python 2.x and 3.x.
 
 [![Build Status](https://travis-ci.org/matiasb/demiurge.png?branch=master)](https://travis-ci.org/matiasb/demiurge)
 
+Documentation: http://demiurge.readthedocs.org
+
 
 Installing demiurge
 -------------------
@@ -16,46 +18,33 @@ Installing demiurge
 Quick start
 -----------
 
-    >>> import demiurge
+Define items to be scraped using a declarative (Django-inspired) syntax:
 
-You can define items to be scraped using a declarative (Django-inspired) syntax:
+    import demiurge
 
-    >>> class Torrent(demiurge.Item):
-    ...     url = demiurge.AttributeValueField(selector='td:eq(2) a:eq(1)', attr='href')
-    ...     name = demiurge.TextField(selector='td:eq(2) a:eq(2)')
-    ...     size = demiurge.TextField(selector='td:eq(3)')
-    ...     class Meta:
-    ...         selector = 'table.maintable:gt(0) tr:gt(0)'
-    ...         base_url = 'http://www.mininova.org'
-    ...
+    class TorrentDetails(demiurge.Item):
+        label = demiurge.TextField(selector='strong')
+        value = demiurge.TextField()
 
-At the moment, there is only two possible fields, *TextField* and
-*AttributeValueField*. A *TextField* expects an optional *selector* argument,
-meanwhile *AttributeValueField* possible arguments are *selector* and *attr*.
+        def clean_value(self, value):
+            unlabel = value[value.find(':') + 1:]
+            return unlabel.strip()
 
-*selector* specifies the PyQuery selector for the element,
-relative to the *Item* element (determined by the Meta *selector* attribute). If
-not specified, the current *Item* element is assumed.
+        class Meta:
+            selector = 'div#specifications p'
 
-On the other hand, *attr* parameter allows to retrieve an element
-attribute value instead of its text content.
+    class Torrent(demiurge.Item):
+        url = demiurge.AttributeValueField(
+            selector='td:eq(2) a:eq(1)', attr='href')
+        name = demiurge.TextField(selector='td:eq(2) a:eq(2)')
+        size = demiurge.TextField(selector='td:eq(3)')
+        details = demiurge.RelatedItem(
+            TorrentDetails, selector='td:eq(2) a:eq(2)', attr='href')
 
-In the example above, the *Item* selector is any row but not the first one, from
-the table with css class *maintable* (also ignoring the first ocurrence,
-sponsored results).
+        class Meta:
+            selector = 'table.maintable:gt(0) tr:gt(0)'
+            base_url = 'http://www.mininova.org'
 
-Each field selector is relative to the *Item* element (in this case, a table row).
-Then, *name* refers to the second anchor in the second cell.
-
-If you need an extra cleanup for a field (for instance, to apply a regex), you can define a *clean_<fieldname>* method in your Item subclass. This method will receive the retrieved value for the field and should return the cleaned one. For example:
-
-    ...     def clean_size(self, value):
-    ...         return value.replace('Mb', 'MB')
-
-
-Once you defined your items, there are a couple of useful methods you can use,
-both expecting as argument a relative path to the *Item* *base\_url* if it was
-defined in the *Item.Meta* class, or a full URL (if *base\_url* was not specified):
 
     >>> t = Torrent.one('/search/ubuntu/seeds')
     >>> t.name
@@ -73,20 +62,24 @@ defined in the *Item.Meta* class, or a full URL (if *base\_url* was not specifie
     >>> for t in results[:3]:
     ...     print t.name, t.size
     ...
-    Ubuntu 7.10 Desktop Live CD 695.81 MB
-    Super Ubuntu 2008.09 - VMware image 871.95 MB
-    Portable Ubuntu 9.10 for Windows 559.78 MB
+    Ubuntu 7.10 Desktop Live CD 695.81 MB
+    Super Ubuntu 2008.09 - VMware image 871.95 MB
+    Portable Ubuntu 9.10 for Windows 559.78 MB
     ...
 
-Also, any extra attributes defined in the *Item.Meta* class will be passed
-to PyQuery when doing the URL request (i.e. you could add, for example,
-*encoding* or *method*; if python-requests is available, there is a bunch of
-extra parameters you could use: *auth*, *data*, *headers*, *verify*, *cert*,
-*config*, *hooks*, *proxies*).
+    >>> t = Torrent.one('/search/ubuntu/seeds')
+    >>> for detail in t.details:
+    ...     print detail.label, detail.value
+    ... 
+    Category: Software > GNU/Linux
+    Total size: 695.81 megabyte
+    Added: 2467 days ago by Distribution
+    Share ratio: 17 seeds, 2 leechers
+    Last updated: 35 minutes ago
+    Downloads: 29,085
 
-Alternatively, there is an *all\_from* method that will retrieve all items from
-a PyQuery object created from the given arguments (i.e. it will directly pass
-all specified parameters to PyQuery and scrap items from there).
+
+See documentation for details: http://demiurge.readthedocs.org
 
 
 Why *demiurge*?
@@ -102,8 +95,7 @@ the world out of a chaotic, indeterminate non-being.
 http://en.wikipedia.org/wiki/Demiurge
 
 
-To Do
------
+Contributors
+------------
 
-- Add real documentation
-- Add more/extra fields
+ - Martín Gaitán (@mgaitan)
