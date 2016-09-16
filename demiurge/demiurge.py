@@ -26,8 +26,13 @@ def with_metaclass(meta, base=object):
 class BaseField(object):
     """Base demiurge field."""
 
+    def __init__(self, filter=None):
+        self.fitler=filter
+
     def clean(self, value):
         """Clean extracted value."""
+        if self.filter:
+            return self.filter(value)
         return value
 
     def get_value(self, pq):
@@ -45,7 +50,7 @@ class TextField(BaseField):
 
     """
 
-    def __init__(self, selector=None):
+    def __init__(self, selector=None, **kwargs):
         super(TextField, self).__init__()
         self.selector = selector
 
