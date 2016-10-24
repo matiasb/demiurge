@@ -26,8 +26,13 @@ def with_metaclass(meta, base=object):
 class BaseField(object):
     """Base demiurge field."""
 
+    def __init__(self, clean=None):
+        self.cleanFunc=clean
+
     def clean(self, value):
         """Clean extracted value."""
+        if self.cleanFunc:
+            return self.cleanFunc(value)
         return value
 
     def get_value(self, pq):
@@ -45,8 +50,8 @@ class TextField(BaseField):
 
     """
 
-    def __init__(self, selector=None):
-        super(TextField, self).__init__()
+    def __init__(self, selector=None, clean=None):
+        super(TextField, self).__init__(clean=clean)
         self.selector = selector
 
     def clean(self, value):
@@ -75,8 +80,8 @@ class AttributeValueField(TextField):
 
     """
 
-    def __init__(self, selector=None, attr=None):
-        super(AttributeValueField, self).__init__(selector=selector)
+    def __init__(self, selector=None, attr=None, clean=None):
+        super(AttributeValueField, self).__init__(selector=selector, clean=clean)
         self.attr = attr
 
     def get_value(self, pq):

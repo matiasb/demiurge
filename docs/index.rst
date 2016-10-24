@@ -169,6 +169,12 @@ self-relate an Item with itself, you should use the 'self' parameter::
         next_page = demiurge.RelatedItem('self', selector='...', attr='...')
 
 
+You can also specify a cleaing function in a keyword argument. 
+For example if value needed to be an int, you could do::
+
+    value = demiurge.TextField(clean=int)
+
+to use pythons build in "int()" function on it.
 
 Why *demiurge*?
 ---------------
