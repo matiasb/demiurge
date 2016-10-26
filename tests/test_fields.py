@@ -55,6 +55,10 @@ class TextFieldTestCase(unittest.TestCase):
         field = TextField()
         self.assertEqual(field.clean("   Hello world. "), "Hello world.")
 
+    def test_coerce_value(self):
+        field = TextField(coerce=int)
+        self.assertEqual(field.coerce("5"), 5)
+
 
 class AttributeValueFieldTestCase(unittest.TestCase):
 

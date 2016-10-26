@@ -26,13 +26,18 @@ def with_metaclass(meta, base=object):
 class BaseField(object):
     """Base demiurge field."""
 
-    def __init__(self, clean=None):
-        self.cleanFunc=clean
+    def __init__(self, coerce=None):
+        super(BaseField, self).__init__()
+        self._coerce = coerce
 
     def clean(self, value):
         """Clean extracted value."""
-        if self.cleanFunc:
-            return self.cleanFunc(value)
+        return value
+
+    def coerce(self, value):
+        """Coerce a cleaned value."""
+        if self._coerce is not None:
+            value = self._coerce(value)
         return value
 
     def get_value(self, pq):
@@ -50,8 +55,8 @@ class TextField(BaseField):
 
     """
 
-    def __init__(self, selector=None, clean=None):
-        super(TextField, self).__init__(clean=clean)
+    def __init__(self, selector=None, coerce=None):
+        super(TextField, self).__init__(coerce=coerce)
         self.selector = selector
 
     def clean(self, value):
@@ -80,8 +85,9 @@ class AttributeValueField(TextField):
 
     """
 
-    def __init__(self, selector=None, attr=None, clean=None):
-        super(AttributeValueField, self).__init__(selector=selector, clean=clean)
+    def __init__(self, selector=None, attr=None, coerce=None):
+        super(AttributeValueField, self).__init__(
+            selector=selector, coerce=coerce)
         self.attr = attr
 
     def get_value(self, pq):
@@ -207,8 +213,10 @@ class Item(with_metaclass(ItemMeta)):
         for field_name, field in self._fields.items():
             raw_value = field.get_value(self._pq)
             value = field.clean(raw_value)
-            if hasattr(self, 'clean_%s' % field_name):
-                value = getattr(self, 'clean_%s' % field_name)(value)
+            clean_field = getattr(self, 'clean_%s' % field_name, None)
+            if clean_field:
+                value = clean_field(value)
+            value = field.coerce(value)
             setattr(self, field_name, value)
 
     @property
