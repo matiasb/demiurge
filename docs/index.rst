@@ -76,6 +76,18 @@ If you need an extra cleanup or processing for a field (for instance, to apply a
         def clean_size(self, value):
             return value.replace('Mb', 'MB')
 
+.. versionadded:: dev
+    Added coerce parameter to fields.
+
+You can also specify a *coerce* function as argument when defining a field.
+This function will be applied to the cleaned value (also after a
+*clean_<fieldname>* call). For example, if value needed to be an int,
+you could do::
+
+    value = demiurge.TextField(coerce=int)
+
+to use Python's built-in *int* and get an integer value.
+
 Once you defined your items, there are a couple of useful methods you can use,
 both expecting as argument a relative path to the *Item* *base\_url* if it was
 defined in the *Item.Meta* class, or a full URL (if *base\_url* was not specified)::
@@ -168,13 +180,6 @@ self-relate an Item with itself, you should use the 'self' parameter::
         ...
         next_page = demiurge.RelatedItem('self', selector='...', attr='...')
 
-
-You can also specify a cleaing function in a keyword argument. 
-For example if value needed to be an int, you could do::
-
-    value = demiurge.TextField(clean=int)
-
-to use pythons build in "int()" function on it.
 
 Why *demiurge*?
 ---------------

@@ -45,6 +45,10 @@ HTML_SAMPLE = """
                     Another link.</a>
             </p>
         </div>
+        <div class="pagination">
+            <a class="page" href="?page=2">Page 2</a>
+            <a class="page" href="?page=3">Page 3</a>
+        </div>
     </body>
 </html>
 """
@@ -74,6 +78,20 @@ class TestItemWithClean(demiurge.Item):
     class Meta:
         base_url = 'http://localhost'
         selector = 'p'
+
+
+class TestItemWithFieldCoercion(demiurge.Item):
+    label = demiurge.TextField(selector='a.page', coerce=int)
+    url = demiurge.AttributeValueField(
+        selector='a.page', attr='href', coerce=bool)
+
+    def clean_label(self, value):
+        # remove the Page prefix
+        return value[5:]
+
+    class Meta:
+        base_url = 'http://localhost'
+        selector = 'div.pagination'
 
 
 class TestIndexItem(demiurge.Item):
@@ -172,6 +190,11 @@ class TestDemiurge(unittest.TestCase):
     def test_item_clean(self):
         item = TestItemWithClean.one()
         self.assertEqual(item.label, 'LINK TEXT.')
+
+    def test_item_field_coercion(self):
+        item = TestItemWithFieldCoercion.one()
+        self.assertEqual(item.label, 2)
+        self.assertEqual(item.url, True)
 
     def test_relateditem_following_link(self):
         self.mock_opener.side_effect = [HTML_INDEX_RELATIVE, HTML_SAMPLE]
