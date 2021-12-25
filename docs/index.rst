@@ -58,7 +58,7 @@ On the other hand, *attr* parameter allows to retrieve an element
 attribute value instead of its text content.
 
 In the example above, the *Item* selector is any row but not the first one, from
-the table with CSS class *maintable* (also ignoring the first ocurrence,
+the table with CSS class *maintable* (also ignoring the first occurrence,
 sponsored results).
 
 Each field selector is relative to the *Item* element (in this case, a table row).
